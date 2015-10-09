@@ -4,14 +4,12 @@
  */
 
 package org.fundacionjala.gradle.plugins.enforce.tasks.salesforce.retrieve
-
 import org.fundacionjala.gradle.plugins.enforce.utils.Constants
 import org.fundacionjala.gradle.plugins.enforce.utils.ManagementFile
 import org.fundacionjala.gradle.plugins.enforce.utils.Util
 import org.fundacionjala.gradle.plugins.enforce.utils.salesforce.PackageManager.PackageBuilder
 
 import java.nio.file.Paths
-
 /**
  * Retrieves elements from organization according parameters inserted by user
  */
@@ -25,7 +23,6 @@ class Retrieve extends Retrieval {
     private final String DESTINATION_FOLDER = 'destination'
     private String option
     public String destination
-    public final int CODE_TO_EXIT = 0
 
     ArrayList<File> filesToRetrieve
 
@@ -41,11 +38,17 @@ class Retrieve extends Retrieval {
 
     @Override
     void runTask() {
-        loadFilesToRetrieve()
         verifyDestinationFolder()
+        loadFilesToRetrieve()
         ManagementFile.createDirectories(projectPath)
         Util.validateContentParameter(projectPath, files)
-        !hasPackage() && !files ? retrieveWithoutPackageXml() : retrieveWithPackageXml()
+        if (specificFiles) {
+            retrieveWithSpecificFiles()
+        } else if (!hasPackage() && !files) {
+            retrieveWithoutPackageXml()
+        } else {
+            retrieveWithPackageXml()
+        }
         deleteTemporaryFiles()
     }
 
@@ -126,6 +129,14 @@ class Retrieve extends Retrieval {
     }
 
     /**
+     * Executes the logic to retrieve specific files defined on -Pfiles parameter and based on the users package.xml file.
+     */
+    void retrieveWithSpecificFiles() {
+        loadFromPackage()
+        runRetrieve()
+    }
+
+    /**
      * Executes retrieve
      * Shows warnings messages
      * Saves Zip file in build folder
@@ -176,8 +187,9 @@ class Retrieve extends Retrieval {
      */
     void showWarningMessage() {
         File[] arrayFiles = Util.getFiles(new File(projectPath))
-        if (arrayFiles.size() > Constants.ZERO && all == Constants.FALSE) {
+        if (!super.isIntegrationMode() && (arrayFiles.size() > Constants.ZERO) && all == Constants.FALSE_OPTION) {
             logger.error(RETRIEVE_MESSAGE_WARNING)
+            Util.showExceptionWhenSystemConsoleIsNull(System.console())
             option = System.console().readLine("  ${RETRIEVE_QUESTION_TO_CONTINUE}")
         } else {
             option = Constants.YES_OPTION
@@ -208,6 +220,6 @@ class Retrieve extends Retrieval {
      * @return true if exist a package xml file else return false
      */
     def hasPackage() {
-        return new File(packageFromSourcePath).exists()
+        return new File(Paths.get(projectPath, Constants.PACKAGE_FILE_NAME).toString()).exists()
     }
 }

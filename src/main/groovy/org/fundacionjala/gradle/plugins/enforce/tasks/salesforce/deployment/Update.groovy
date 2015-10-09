@@ -121,16 +121,17 @@ class Update extends Deployment {
      */
     public void showFilesChanged() {
         if (isEmptyChangedFiles()) {
-            logger.quiet(NOT_FILES_CHANGED)
+            println (NOT_FILES_CHANGED)
         }
+
         if (packageGenerator.fileTrackerMap.size() > 0) {
-            logger.quiet("*********************************************")
-            logger.quiet("              Status Files Changed             ")
-            logger.quiet("*********************************************")
+            println ("*********************************************")
+            println ("              Status Files Changed             ")
+            println ("*********************************************")
             packageGenerator.fileTrackerMap.each { nameFile, status ->
-                logger.quiet("${Paths.get(nameFile).getFileName().toString()}${" - "}${status.toString()}")
+                println ("${Paths.get(nameFile).getFileName().toString()}${" - "}${status.toString()}")
             }
-            logger.quiet("*********************************************")
+            println ("*********************************************")
         }
     }
 
@@ -182,9 +183,6 @@ class Update extends Deployment {
         if (Util.isValidProperty(parameters, Constants.PARAMETER_FOLDERS) && !Util.isEmptyProperty(parameters, Constants.PARAMETER_FOLDERS)) {
             folders = parameters.get(Constants.PARAMETER_FOLDERS)
         }
-
-        if (Util.isValidProperty(parameters, Constants.PARAMETER_EXCLUDES) && !Util.isEmptyProperty(parameters, Constants.PARAMETER_EXCLUDES)) {
-            excludes = parameters.get(Constants.PARAMETER_EXCLUDES)
-        }
+        loadCommonParameters()
     }
 }

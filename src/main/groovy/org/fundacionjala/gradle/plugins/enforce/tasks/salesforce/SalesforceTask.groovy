@@ -43,6 +43,7 @@ abstract class SalesforceTask extends ForceTask {
     public ArrayList<String> arrayPaths
     public String projectPackagePath
     public Map parameters
+    ArrayList<String> FOLDERS_WITH_SUB_FOLDERS = ['documents', 'reports', 'dashboards']
 
     /**
      * Sets description and group task
@@ -104,12 +105,18 @@ abstract class SalesforceTask extends ForceTask {
      * @param packagePath is path when package xml will be to create
      * @param files is an array of files
      */
-    void writePackage(String packagePath, ArrayList<File> files) {
+    void writePackage(String packagePath, ArrayList<File> files, boolean withProjectPath = true) {
         FileWriter fileWriter = new FileWriter(packagePath)
-        files = files.grep({ file ->
-            !file.name.endsWith(Constants.META_XML_NAME)
+        files = files.grep({ File file ->
+            String folderName = file.getParentFile().getName()
+            !file.name.endsWith(Constants.META_XML) || (FOLDERS_WITH_SUB_FOLDERS.contains(folderName)
+                    && file.name.endsWith(Constants.META_XML))
         })
-        packageBuilder.createPackage(files, projectPath)
+        if (withProjectPath) {
+            packageBuilder.createPackage(files, projectPath)
+        } else {
+            packageBuilder.createPackage(files)
+        }
         packageBuilder.write(fileWriter)
         fileWriter.close()
     }

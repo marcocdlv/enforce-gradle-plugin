@@ -26,7 +26,7 @@ class RunTestTaskTest extends Specification {
         project.apply(plugin: EnforcePlugin)
         project.enforce {
             srcPath = "${File.separator}home${File.separator}user${File.separator}project${File.separator}one"
-            standardObjects = ["Q2w_Test__c.object"]
+            standardComponents = ["Q2w_Test__c.object"]
             tool = "metadata"
             poll = 200
             waitTime = 10
@@ -50,7 +50,7 @@ class RunTestTaskTest extends Specification {
 
     def "Should get the standard objects assigned"() {
         expect:
-        project.extensions.findByName('enforce').standardObjects == ["Q2w_Test__c.object"]
+        project.extensions.findByName('enforce').standardComponents == ["Q2w_Test__c.object"]
     }
 
     def "Should get the tool assigned"() {
@@ -62,7 +62,7 @@ class RunTestTaskTest extends Specification {
         given:
             project.enforce {
                 srcPath = SRC_PATH
-                standardObjects = ["Q2w_Test__c.object"]
+                standardComponents = ["Q2w_Test__c.object"]
                 tool = "metadata"
                 poll = 200
                 waitTime = 10
@@ -78,11 +78,11 @@ class RunTestTaskTest extends Specification {
             classNames.sort() == ["FGW_Console_CTRLTest", "FGW_APIFactoryTest"].sort()
     }
 
-    def "Should get the class names no param"() {
+    def "Should get the class names no param, by default -Pasync=false"() {
         given:
             project.enforce {
                 srcPath = SRC_PATH
-                standardObjects = ["Q2w_Test__c.object"]
+                standardComponents = ["Q2w_Test__c.object"]
                 tool = "metadata"
                 poll = 200
                 waitTime = 10
@@ -94,7 +94,7 @@ class RunTestTaskTest extends Specification {
             runTestTask.runTestSelector()
             classNames = runTestTask.getClassNames()
         then:
-            classNames.sort() == ["FGW_Console_CTRLTest", "FGW_APIFactoryTest"].sort()
+        classNames == null
     }
 
     def "Test should return the class name when notation is case insensitive"() {

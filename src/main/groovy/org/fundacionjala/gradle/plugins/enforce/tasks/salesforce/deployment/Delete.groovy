@@ -40,12 +40,13 @@ class Delete extends Deployment {
      */
     @Override
     void runTask() {
+        Util.showExceptionWhenSystemConsoleIsNull(System.console())
         createDeploymentDirectory(taskFolderPath)
         loadClassifiedFiles(files, excludes)
         loadFilesToDelete()
         validateFilesInOrg()
         showFilesToDelete()
-        if( System.console().readLine("\n"+QUESTION_CONTINUE_DELETE) == Constants.YES_OPTION ) {
+        if(super.isIntegrationMode() || (System.console().readLine("\n"+QUESTION_CONTINUE_DELETE) == Constants.YES_OPTION) ) {
             createDestructive()
             createPackageEmpty()
             executeDeploy(taskFolderPath, START_DELETE_TASK, SUCCESSFULLY_DELETE_TASK)
@@ -64,9 +65,7 @@ class Delete extends Deployment {
         if (Util.isValidProperty(parameters, Constants.PARAMETER_FILES)) {
             files = parameters[Constants.PARAMETER_FILES]
         }
-        if (Util.isValidProperty(parameters, Constants.PARAMETER_EXCLUDES)) {
-            excludes = parameters[Constants.PARAMETER_EXCLUDES]
-        }
+        loadCommonParameters()
     }
 
     /**
