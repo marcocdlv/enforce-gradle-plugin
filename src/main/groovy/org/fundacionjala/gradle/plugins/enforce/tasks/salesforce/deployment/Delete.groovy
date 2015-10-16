@@ -9,6 +9,8 @@ import org.fundacionjala.gradle.plugins.enforce.utils.Constants
 import org.fundacionjala.gradle.plugins.enforce.utils.Util
 import org.fundacionjala.gradle.plugins.enforce.utils.salesforce.OrgValidator
 
+import java.nio.file.Paths
+
 /**
  * Deletes files into an org using metadata API
  */
@@ -20,9 +22,12 @@ class Delete extends Deployment {
     private static final String PROCESS_DELETE_CANCELLED = "The delete process was canceled"
     private static final String NOT_FILES_DELETED = "There are not files to delete"
     private static final String QUESTION_CONTINUE_DELETE = "Do you want delete this files from your organization? (y/n) :"
+    private static final String FILES_TO_TRUNCATE = "filesToTruncate"
+    private static final String DESTRUCTIVE_CHANGES_POST = "destructiveChangesPost.xml"
 
     public ArrayList<File> filesToDeleted
     public String files = ""
+    public String filesToTruncate = ""
 
     /**
      * Sets description and group task
@@ -33,6 +38,7 @@ class Delete extends Deployment {
         super(DESCRIPTION_DELETE_TASK, Constants.DEPLOYMENT)
         taskFolderName = DIR_DELETE_FOLDER
         filesToDeleted = []
+        interceptorsToExecute = org.fundacionjala.gradle.plugins.enforce.interceptor.Interceptor.INTERCEPTORS.values().toList()
     }
 
     /**
@@ -62,8 +68,13 @@ class Delete extends Deployment {
      * @return A map of all task parameters
      */
     void loadParameters() {
-        if (Util.isValidProperty(parameters, Constants.PARAMETER_FILES)) {
+        if (Util.isValidProperty(parameters, Constants.PARAMETER_FILES) &&
+                !Util.isEmptyProperty(parameters, Constants.PARAMETER_FILES)) {
             files = parameters[Constants.PARAMETER_FILES]
+        }
+        if (Util.isValidProperty(parameters, FILES_TO_TRUNCATE) &&
+                !Util.isEmptyProperty(parameters, FILES_TO_TRUNCATE)) {
+            filesToTruncate = parameters[FILES_TO_TRUNCATE]
         }
         loadCommonParameters()
     }
@@ -122,6 +133,9 @@ class Delete extends Deployment {
      * Creates packages to all files which has been deleted
      */
     def createDestructive() {
+        if (!filesToTruncate.isEmpty()) {
+            taskDestructivePath = Paths.get(taskFolderPath, DESTRUCTIVE_CHANGES_POST).toString()
+        }
         writePackage(taskDestructivePath, filesToDeleted)
         combinePackageToUpdate(taskDestructivePath)
     }
@@ -130,6 +144,19 @@ class Delete extends Deployment {
      * Create a package empty
      */
     def createPackageEmpty() {
-        writePackage(taskPackagePath, [])
+        if (filesToTruncate.isEmpty()) {
+            writePackage(taskPackagePath, [])
+            return
+        }
+        loadClassifiedFiles(filesToTruncate, excludes)
+        copyFilesToTaskDirectory(classifiedFile.validFiles)
+        addInterceptor()
+        writePackage(taskPackagePath, classifiedFile.validFiles)
+        combinePackageToUpdate(taskPackagePath)
+    }
+
+    public void addInterceptor() {
+        interceptorsToExecute += interceptors
+        truncateComponents(taskFolderPath)
     }
 }
